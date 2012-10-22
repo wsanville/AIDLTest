@@ -1,11 +1,11 @@
 package co.touchlab.aidltest.services;
 
 import android.os.RemoteException;
-import co.touchlab.aidltest.interfaces.Article;
-import co.touchlab.aidltest.interfaces.Category;
-import co.touchlab.aidltest.interfaces.IRemoteService;
+import android.util.Log;
+import co.touchlab.aidltest.interfaces.*;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 /**
  * User: William Sanville
@@ -15,10 +15,38 @@ import java.util.List;
  */
 public class RemoteServiceBinder extends IRemoteService.Stub
 {
-    @Override
-    public Article loadArticle(int id) throws RemoteException
+    private RemoteService service;
+
+    public RemoteServiceBinder(RemoteService service)
     {
-        return MockDataStore.articleById(id);
+        this.service = service;
+    }
+
+    @Override
+    public void loadArticle(final int id, final ArticleCallback callback) throws RemoteException
+    {
+        service.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    callback.onSuccess(MockDataStore.articleById(id));
+                }
+                catch (RemoteException e)
+                {
+                    try
+                    {
+                        callback.onFailure(Constants.ARTICLE_FAILED_WTF, e.getLocalizedMessage());
+                    }
+                    catch (RemoteException e1)
+                    {
+                        Log.e(getClass().getSimpleName(), "Unable to call failure callback!", e1);
+                    }
+                }
+            }
+        });
     }
 
     @Override

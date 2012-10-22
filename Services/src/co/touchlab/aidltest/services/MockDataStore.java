@@ -39,7 +39,7 @@ public class MockDataStore
 
     public synchronized static Article articleById(int id)
     {
-        //simulateWait();
+        simulateWait();
 
         for (Article a : ARTICLES)
             if (a.getId() == id)

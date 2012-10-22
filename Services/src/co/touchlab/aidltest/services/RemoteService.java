@@ -2,8 +2,13 @@ package co.touchlab.aidltest.services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * User: William Sanville
@@ -13,11 +18,18 @@ import android.util.Log;
  */
 public class RemoteService extends Service
 {
-    private IBinder binder = new RemoteServiceBinder();
+    private ExecutorService executor = Executors.newFixedThreadPool(5);
+
+    private IBinder binder = new RemoteServiceBinder(this);
 
     public IBinder onBind(Intent intent)
     {
         return binder;
+    }
+
+    void submit(Runnable runnable)
+    {
+        executor.submit(runnable);
     }
 
     @Override
@@ -31,6 +43,7 @@ public class RemoteService extends Service
     public void onDestroy()
     {
         Log.d("MyActivity", "RemoteService onDestroy()");
+        executor.shutdownNow();
         super.onDestroy();
     }
 }

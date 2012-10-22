@@ -10,6 +10,7 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.widget.TextView;
 import co.touchlab.aidltest.interfaces.Article;
+import co.touchlab.aidltest.interfaces.ArticleCallback;
 import co.touchlab.aidltest.interfaces.IRemoteService;
 
 public class MyActivity extends Activity
@@ -65,35 +66,75 @@ public class MyActivity extends Activity
         }
     }
 
-    private void articleLoaded(Article article)
+    private void onBackgroundArticleLoaded(final Article article)
     {
-        String value = String.format("Got Article, Title = %s, Category = %s", article.getTitle(), article.getCategory().getName());
-        Log.d(getClass().getSimpleName(), value);
-        TextView text = (TextView)findViewById(R.id.text);
-        text.setText(value);
+        runOnUiThread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                String value = String.format("Got Article, Title = %s, Category = %s", article.getTitle(), article.getCategory().getName());
+                Log.d(MyActivity.class.getSimpleName(), value);
+                TextView text = (TextView)findViewById(R.id.text);
+                text.setText(value);
+            }
+        });
+    }
+
+    private void loadFailed()
+    {
+        //show a message to the user or something
     }
 
     static class ActivityServiceConnection implements ServiceConnection
     {
-        private MyActivity activity;
         private IRemoteService remoteService;
-        private volatile Article article;
+        private MyActivity activity;
+        private Article article;
+
+        private ArticleCallback callback = new ArticleCallback.Stub()
+        {
+            @Override
+            public void onFailure(int errorCode, String message) throws RemoteException
+            {
+                callFailure();
+            }
+
+            @Override
+            public void onSuccess(Article result) throws RemoteException
+            {
+                setAndNotify(result);
+            }
+        };
 
         ActivityServiceConnection(MyActivity activity)
         {
             this.activity = activity;
         }
 
-        public void attach(MyActivity activity)
+        public synchronized void attach(MyActivity activity)
         {
             this.activity = activity;
             if (article != null && this.activity != null)
-                this.activity.articleLoaded(article);
+                this.activity.onBackgroundArticleLoaded(article);
         }
 
-        public void detach()
+        public synchronized void detach()
         {
             this.activity = null;
+        }
+
+        synchronized void setAndNotify(Article article)
+        {
+            this.article = article;
+            if (this.activity != null)
+                this.activity.onBackgroundArticleLoaded(article);
+        }
+
+        synchronized void callFailure()
+        {
+            if (this.activity != null)
+                this.activity.loadFailed();
         }
 
         @Override
@@ -101,11 +142,12 @@ public class MyActivity extends Activity
         {
             Log.d(getClass().getSimpleName(), "onServiceConnected");
             remoteService = IRemoteService.Stub.asInterface(iBinder);
+
             try
             {
-                article = remoteService.loadArticle(3);
-                if (activity != null)
-                    activity.articleLoaded(article);
+                /* This gets called in the UI thread. It will return immediately from the service, and we'll get a
+                 * callback from a NON-UI THREAD!!!! */
+                remoteService.loadArticle(3, callback);
             }
             catch (RemoteException e)
             {
