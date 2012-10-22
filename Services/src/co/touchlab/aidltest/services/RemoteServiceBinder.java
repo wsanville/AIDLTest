@@ -5,7 +5,6 @@ import android.util.Log;
 import co.touchlab.aidltest.interfaces.*;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 /**
  * User: William Sanville

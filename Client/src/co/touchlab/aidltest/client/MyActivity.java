@@ -154,7 +154,7 @@ public class MyActivity extends Activity
                 /* This signifies a dead service connection, which only happens when the remote process dies
                  * unexpectedly. In such a case, onServiceDisconnected() will be called, per the Android documentation. */
                 Log.e(MyActivity.class.getSimpleName(), "Error calling remote method.", e);
-             }
+            }
         }
 
         @Override

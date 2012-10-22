@@ -1,13 +1,9 @@
 package co.touchlab.aidltest.services;
 
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-import android.util.Log;
 import co.touchlab.aidltest.interfaces.Article;
 import co.touchlab.aidltest.interfaces.Category;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -15,7 +11,7 @@ import java.util.List;
  * Date: 10/12/12
  * Time: 12:22 PM
  * A bogus data store for a simple data model.
- *
+ * <p/>
  * The getter methods are synchronized because according to the docs, an AIDL implementation should expect to be called
  * from a pool of unknown threads, and thus, be thread safe.  This example is obviously a bit contrived, but you know...
  */
@@ -23,6 +19,7 @@ public class MockDataStore
 {
     private static final List<Category> CATEGORIES = new ArrayList<Category>();
     private static final List<Article> ARTICLES = new ArrayList<Article>();
+
     static
     {
         Category first = new Category(1, "First Category");

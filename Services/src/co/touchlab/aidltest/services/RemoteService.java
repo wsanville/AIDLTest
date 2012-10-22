@@ -2,9 +2,7 @@ package co.touchlab.aidltest.services;
 
 import android.app.Service;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
 
 import java.util.concurrent.ExecutorService;
