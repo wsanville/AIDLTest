@@ -1,5 +1,5 @@
 The goal for this is to:
 1) Deploy a service in one application, and use it from a differernt application using AIDL.
 2) Bind and unbind to the service properly from the consumer app.
-3) Support default config change behavior from the consumer app.
-4) Don't block the UI thread in the consumer app (not done yet).
+3) Support screen rotation and default config change behavior from the consumer app.
+4) Don't block the UI thread in the consumer app (done via a callback interface).
