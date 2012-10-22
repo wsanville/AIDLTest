@@ -24,6 +24,7 @@ public class RemoteServiceBinder extends IRemoteService.Stub
     @Override
     public void loadArticle(final int id, final ArticleCallback callback) throws RemoteException
     {
+        //This method will return immediately, and call the client's callback when the actual work is done.
         service.submit(new Runnable()
         {
             @Override
