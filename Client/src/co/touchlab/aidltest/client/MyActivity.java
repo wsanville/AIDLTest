@@ -81,7 +81,7 @@ public class MyActivity extends Activity
         });
     }
 
-    private void loadFailed()
+    private void onBackgroundLoadFailed()
     {
         //show a message to the user or something
     }
@@ -134,7 +134,7 @@ public class MyActivity extends Activity
         synchronized void callFailure()
         {
             if (this.activity != null)
-                this.activity.loadFailed();
+                this.activity.onBackgroundLoadFailed();
         }
 
         @Override
