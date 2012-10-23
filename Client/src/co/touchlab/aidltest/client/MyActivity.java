@@ -62,7 +62,19 @@ public class MyActivity extends Activity
         if (!isChangingConfigurations() && serviceConnection != null)
         {
             Log.d(MyActivity.class.getSimpleName(), "calling unbindService()");
+            tryUnbind();
+        }
+    }
+
+    private void tryUnbind()
+    {
+        try
+        {
             getApplicationContext().unbindService(serviceConnection);
+        }
+        catch (IllegalArgumentException e)
+        {
+            Log.d(MyActivity.class.getSimpleName(), "Service was already unbound.", e);
         }
     }
 
