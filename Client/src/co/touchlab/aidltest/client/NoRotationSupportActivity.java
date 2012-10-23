@@ -13,11 +13,17 @@ import co.touchlab.aidltest.interfaces.Article;
 import co.touchlab.aidltest.interfaces.ArticleCallback;
 import co.touchlab.aidltest.interfaces.IRemoteService;
 
-public class MyActivity extends Activity
+/**
+ * User: William Sanville
+ * Date: 10/23/12
+ * Time: 3:53 PM
+ * Test to demonstrate what happens if you ignore config changes during a bound service. Basically, in-progress calls
+ * will be recalled.
+ */
+public class NoRotationSupportActivity extends Activity
 {
-    private ActivityServiceConnection serviceConnection;
+    private ServiceConnection serviceConnection;
 
-    @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
@@ -25,44 +31,23 @@ public class MyActivity extends Activity
     }
 
     @Override
-    public Object onRetainNonConfigurationInstance()
-    {
-        serviceConnection.detach();
-        return serviceConnection;
-    }
-
-    @Override
     protected void onStart()
     {
-        Log.d(getClass().getSimpleName(), "onStart() called");
         super.onStart();
 
-        //Let's try to bind to a service in a separate APK.
-        Object last = getLastNonConfigurationInstance();
-        if (last instanceof ActivityServiceConnection)
-        {
-            serviceConnection = (ActivityServiceConnection)last;
-            serviceConnection.attach(this);
-        }
-        else
-        {
-            serviceConnection = new ActivityServiceConnection(this);
-            Intent intent = new Intent(IRemoteService.class.getName());
-            boolean success = getApplicationContext().bindService(intent, serviceConnection, BIND_AUTO_CREATE);
-            Log.d(MyActivity.class.getSimpleName(), String.format("bindService() returned %b.", success));
-        }
+        serviceConnection = new ActivityServiceConnection();
+        Intent intent = new Intent(IRemoteService.class.getName());
+        boolean success = getApplicationContext().bindService(intent, serviceConnection, BIND_AUTO_CREATE);
+        Log.d(NoRotationSupportActivity.class.getSimpleName(), String.format("bindService() returned %b.", success));
     }
 
     @Override
     protected void onStop()
     {
-        Log.d(getClass().getSimpleName(), "onStop() called");
         super.onStop();
 
-        if (!isChangingConfigurations() && serviceConnection != null)
-        {
+        if (serviceConnection != null)
             tryUnbind();
-        }
     }
 
     private void tryUnbind()
@@ -70,12 +55,11 @@ public class MyActivity extends Activity
         try
         {
             getApplicationContext().unbindService(serviceConnection);
-            serviceConnection = null;
-            Log.d(MyActivity.class.getSimpleName(), "unbindService() call successful");
+            Log.d(NoRotationSupportActivity.class.getSimpleName(), "Service unbound successfully");
         }
         catch (IllegalArgumentException e)
         {
-            Log.d(MyActivity.class.getSimpleName(), "Service was already unbound.", e);
+            Log.d(NoRotationSupportActivity.class.getSimpleName(), "Service was already unbound.", e);
         }
     }
 
@@ -87,7 +71,7 @@ public class MyActivity extends Activity
             public void run()
             {
                 String value = String.format("Got Article, Title = %s, Category = %s", article.getTitle(), article.getCategory().getName());
-                Log.d(MyActivity.class.getSimpleName(), value);
+                Log.d(NoRotationSupportActivity.class.getSimpleName(), value);
                 TextView text = (TextView)findViewById(R.id.text);
                 text.setText(value);
             }
@@ -99,56 +83,25 @@ public class MyActivity extends Activity
         //show a message to the user or something
     }
 
-    static class ActivityServiceConnection implements ServiceConnection
+    class ActivityServiceConnection implements ServiceConnection
     {
         private IRemoteService remoteService;
-        private MyActivity activity;
-        private Article article;
 
         private ArticleCallback callback = new ArticleCallback.Stub()
         {
             @Override
             public void onFailure(int errorCode, String message) throws RemoteException
             {
-                callFailure();
+                NoRotationSupportActivity.this.onBackgroundLoadFailed();
             }
 
             @Override
             public void onSuccess(Article result) throws RemoteException
             {
-                setAndNotify(result);
+                Log.d("NoRotationSupportActivity", "Got callback, Activity instance: " + NoRotationSupportActivity.this.toString());
+                NoRotationSupportActivity.this.onBackgroundArticleLoaded(result);
             }
         };
-
-        ActivityServiceConnection(MyActivity activity)
-        {
-            this.activity = activity;
-        }
-
-        public synchronized void attach(MyActivity activity)
-        {
-            this.activity = activity;
-            if (article != null && this.activity != null)
-                this.activity.onBackgroundArticleLoaded(article);
-        }
-
-        public synchronized void detach()
-        {
-            this.activity = null;
-        }
-
-        synchronized void setAndNotify(Article article)
-        {
-            this.article = article;
-            if (this.activity != null)
-                this.activity.onBackgroundArticleLoaded(article);
-        }
-
-        synchronized void callFailure()
-        {
-            if (this.activity != null)
-                this.activity.onBackgroundLoadFailed();
-        }
 
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder)
@@ -166,7 +119,7 @@ public class MyActivity extends Activity
             {
                 /* This signifies a dead service connection, which only happens when the remote process dies
                  * unexpectedly. In such a case, onServiceDisconnected() will be called, per the Android documentation. */
-                Log.e(MyActivity.class.getSimpleName(), "Error calling remote method.", e);
+                Log.e(NoRotationSupportActivity.class.getSimpleName(), "Error calling remote method.", e);
             }
         }
 
@@ -175,7 +128,7 @@ public class MyActivity extends Activity
         {
             /* This is called when the connection with the service has been unexpectedly disconnected -- that is, its process crashed. */
             remoteService = null;
-            Log.d(MyActivity.class.getSimpleName(), "onServiceDisconnected");
+            Log.d(NoRotationSupportActivity.class.getSimpleName(), "onServiceDisconnected");
         }
     }
 }
