@@ -42,7 +42,7 @@ public class RemoteServiceBinder extends IRemoteService.Stub
                     }
                     catch (RemoteException e1)
                     {
-                        Log.e(getClass().getSimpleName(), "Unable to call failure callback!", e1);
+                        Log.e(RemoteServiceBinder.class.getSimpleName(), "Unable to call failure callback!", e1);
                     }
                 }
             }
